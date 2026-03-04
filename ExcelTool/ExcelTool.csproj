@@ -4,8 +4,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-    <PackageReference Include="NPOI.Excel" Version="2.1.1" />
+    <PackageReference Include="NPOI" Version="2.7.6" />
     <PackageReference Include="Spire.XLS" Version="12.7.1" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
