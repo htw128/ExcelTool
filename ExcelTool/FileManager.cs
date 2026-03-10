@@ -8,7 +8,7 @@ namespace ExcelTool
     /// <summary>
     /// 文件操作类
     /// </summary>
-    public class FileManager
+    public static class FileManager
     {
         public static bool CreateDir(string dirPath)
         {

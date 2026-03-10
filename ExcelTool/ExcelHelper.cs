@@ -7,9 +7,9 @@ using ExcelTool.Parser;
 
 namespace ExcelTool
 {
-    public class ExcelHelper
+    public static class ExcelHelper
     {
-        public static List<TableExcelHeader> ExcelHeaders(string fileName)
+        public static List<TableExcelHeader> ExcelHeaders(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
         {
             try
             {
@@ -17,8 +17,17 @@ namespace ExcelTool
 
                 using FileStream fs = File.OpenRead(fileName);
                 IWorkbook wk = new XSSFWorkbook(fs);
-                ISheet sheet = wk.GetSheetAt(0);
-
+                
+                sheetCount = wk.NumberOfSheets;
+                if (sheetNum >= sheetCount)
+                {
+                    sheetName = "";
+                    return null;
+                }
+                
+                ISheet sheet = wk.GetSheetAt(sheetNum);
+                sheetName = sheet.SheetName;
+                
                 IRow nameRow = sheet.GetRow(0);   // 字段名
                 IRow typeRow = sheet.GetRow(1);   // 类型
                 IRow descRow = sheet.GetRow(2);   // 注释
@@ -39,7 +48,7 @@ namespace ExcelTool
                     {
                         FieldName = fieldName,
                         FieldType = fieldType,
-                        FieldDesc = fieldDesc
+                        FieldDesc = fieldDesc,
                     });
                 }
 
@@ -48,20 +57,27 @@ namespace ExcelTool
             catch (Exception ex)
             {
                 ex.ToString().WriteErrorLine();
+                sheetName = null;
+                sheetCount = 0;
                 return null;
             }
         }
 
-        public static TableExcelData ExcelDatas(string fileName)
+        public static TableExcelData ExcelDatas(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
         {
             try
             {
-                var excelHeader = ExcelHeaders(fileName);
+                var excelHeader = ExcelHeaders(fileName, out sheetName, out sheetCount);
                 var tableRows = new List<TableExcelRow>();
 
                 using FileStream fs = File.OpenRead(fileName);
                 IWorkbook wk = new XSSFWorkbook(fs);
-                ISheet sheet = wk.GetSheetAt(0);
+
+                if (sheetNum >= sheetCount)
+                {
+                    return null;
+                }
+                ISheet sheet = wk.GetSheetAt(sheetNum);
 
                 for (int i = 6; i <= sheet.LastRowNum; i++)
                 {
@@ -84,6 +100,8 @@ namespace ExcelTool
             catch (Exception ex)
             {
                 ex.ToString().WriteErrorLine();
+                sheetName = null;
+                sheetCount = 0;
                 return null;
             }
         }
