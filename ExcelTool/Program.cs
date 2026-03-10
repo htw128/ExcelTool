@@ -55,6 +55,8 @@ namespace ExcelTool
                 //读取
                 foreach (var file in excels)
                 {
+                    if (file.Name.StartsWith("~$")) return;
+                    
                     //生成CS文件
                     bool res = GenModels.GenCSharpModel(file.FullName, exportPath);
                     if (res)
