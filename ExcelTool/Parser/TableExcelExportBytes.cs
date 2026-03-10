@@ -10,6 +10,13 @@ namespace ExcelTool.Parser
         {
             try
             {
+                Dictionary<string, string> enumMap = new()
+                {
+                    { "killmode", "byte" },
+                    { "mixingtype", "byte" },
+                    { "containertype", "byte" },
+                    { "blendcrossfadetype", "byte" }
+                };
                 FileInfo fileInfo = new(fileName);
                 if (string.IsNullOrEmpty(outputDir))
                 {
@@ -19,10 +26,14 @@ namespace ExcelTool.Parser
                 for (int sheetNum = 0; ; sheetNum++)
                 {
                     var tableData = ExcelHelper.ExcelDatas(fileName, out string sheetName, out int sheetCount, sheetNum);
-                    if (tableData == null || sheetName.StartsWith($"#") || sheetNum > sheetCount)
+                    if (tableData == null || sheetNum >= sheetCount)
                         break;
 
-                    List<Tuple<string, string>> datas = new();
+                    // # 开头的 sheet 只跳过
+                    if (sheetName.StartsWith("#"))
+                        continue;
+
+                    List<Tuple<string, string>> datas = [];
                     //先写入行数，然后每一行的数据一次写入  小写类型、字符串
                     Tuple<string, string> rowCount = new("int", tableData.RowCounts.ToString());
                     datas.Add(rowCount);
@@ -32,6 +43,12 @@ namespace ExcelTool.Parser
                         {
                             var type = tableData.Headers[i].FieldType.ToLower();
                             var data = row.StrList[i];
+
+                            if (enumMap.ContainsKey(type))
+                            {
+                                type = enumMap[type];
+                            }
+
                             datas.Add(new Tuple<string, string>(type, data));
                         }
                     }

@@ -67,7 +67,7 @@ namespace ExcelTool
         {
             try
             {
-                var excelHeader = ExcelHeaders(fileName, out sheetName, out sheetCount);
+                var excelHeader = ExcelHeaders(fileName, out sheetName, out sheetCount, sheetNum);
                 var tableRows = new List<TableExcelRow>();
 
                 using FileStream fs = File.OpenRead(fileName);

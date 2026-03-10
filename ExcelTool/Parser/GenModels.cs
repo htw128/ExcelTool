@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -22,6 +23,14 @@ namespace ExcelTool.Parser
             }
             try
             {
+                // 枚举类型映射
+                Dictionary<string, string> enumMap = new()
+                {
+                    { "killmode", "KillMode" },
+                    { "mixingtype", "MixingType" },
+                    { "containertype", "ContainerType" },
+                    { "blendcrossfadetype", "BlendCrossFadeType" }
+                };
                 FileInfo fileInfo = new(fileName);
                 if (string.IsNullOrEmpty(outputDir))
                 {
@@ -58,49 +67,66 @@ namespace ExcelTool.Parser
                         }
                         sb.Append($"\t/// </summary>\n");
                         var type = headers[i].FieldType.ToLower();
-                        if (type.Equals("vector"))
+                        var origType = headers[i].FieldType;
+                        var fieldName = headers[i].FieldName;
+                        if (enumMap.ContainsKey(type))
+                        {
+                            sb.Append($"\tpublic {enumMap[type]} {fieldName} {{ get; set; }}\n\n");
+                        }
+                        else if (type.Equals("vector"))
                         {
                             sb.Append(string.Format("\tpublic List<float> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("vectorlist"))
                         {
                             sb.Append(string.Format("\tpublic List<List<float>> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("intlist"))
                         {
                             sb.Append(string.Format("\tpublic List<int> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("boollist"))
                         {
                             sb.Append(string.Format("\tpublic List<bool> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("floatlist"))
                         {
                             sb.Append(string.Format("\tpublic List<float> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("stringlist"))
                         {
                             sb.Append(string.Format("\tpublic List<string> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("longlist"))
                         {
                             sb.Append(string.Format("\tpublic List<long> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("uintlist"))
                         {
                             sb.Append(string.Format("\tpublic List<uint> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("ushortlist"))
                         {
                             sb.Append(string.Format("\tpublic List<ushort> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("sbytelist"))
                         {
                             sb.Append(string.Format("\tpublic List<sbyte> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Equals("bytelist"))
                         {
                             sb.Append(string.Format("\tpublic List<byte> {0}", headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
                         else if (type.Contains("list<"))
                         {
@@ -109,22 +135,27 @@ namespace ExcelTool.Parser
                             if (newType.Equals("int"))
                             {
                                 sb.Append(string.Format("\tpublic List<int> {0}", headers[i].FieldName));
+                                sb.Append(" { get; set; }\n\n");
                             }
                             else if (newType.Equals("bool"))
                             {
                                 sb.Append(string.Format("\tpublic List<bool> {0}", headers[i].FieldName));
+                                sb.Append(" { get; set; }\n\n");
                             }
                             else if (newType.Equals("float"))
                             {
                                 sb.Append(string.Format("\tpublic List<float> {0}", headers[i].FieldName));
+                                sb.Append(" { get; set; }\n\n");
                             }
                             else if (newType.Equals("long"))
                             {
                                 sb.Append(string.Format("\tpublic List<long> {0}", headers[i].FieldName));
+                                sb.Append(" { get; set; }\n\n");
                             }
                             else if (newType.Equals("string"))
                             {
                                 sb.Append(string.Format("\tpublic List<string> {0}", headers[i].FieldName));
+                                sb.Append(" { get; set; }\n\n");
                             }
                             else
                             {
@@ -134,8 +165,8 @@ namespace ExcelTool.Parser
                         else
                         {
                             sb.Append(string.Format("\tpublic {0} {1}", headers[i].FieldType.ToLower(), headers[i].FieldName));
+                            sb.Append(" { get; set; }\n\n");
                         }
-                        sb.Append(" { get; set; }\n\n");
                     }
                     sb.Append("\n\tpublic void DeSerialize(BinaryReader reader)\n");
                     sb.Append("\t{\n");
@@ -143,7 +174,11 @@ namespace ExcelTool.Parser
                     {
                         var type = header.FieldType.ToLower();
                         var name = header.FieldName;
-                        if (type.Equals("int"))
+                        if (enumMap.ContainsKey(type))
+                        {
+                            sb.Append($"\t\t{name} = ({enumMap[type]})reader.ReadByte();\n");
+                        }
+                        else if (type.Equals("int"))
                         {
                             sb.Append($"\t\t{name} = reader.ReadInt32();\n");
                         }
@@ -181,11 +216,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("vector"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<float>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadSingle());\n");
                             sb.Append("\t\t\t}\n");
@@ -197,11 +232,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("vectorlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<List<float>>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\tvar tempList = new List<float>();\n");
                             sb.Append($"\t\t\t\tvar tempListCount = reader.ReadInt32();\n");
@@ -219,11 +254,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("intlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<int>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadInt32());\n");
                             sb.Append("\t\t\t}\n");
@@ -234,11 +269,11 @@ namespace ExcelTool.Parser
                             sb.Append("\t\t}\n");
                         }else if (type.Equals("uintlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<uint>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadUInt32());\n");
                             sb.Append("\t\t\t}\n");
@@ -250,11 +285,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("boollist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<bool>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadBoolean());\n");
                             sb.Append("\t\t\t}\n");
@@ -266,11 +301,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("floatlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<float>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadSingle());\n");
                             sb.Append("\t\t\t}\n");
@@ -282,11 +317,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("stringlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<string>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadString());\n");
                             sb.Append("\t\t\t}\n");
@@ -298,11 +333,11 @@ namespace ExcelTool.Parser
                         }
                         else if (type.Equals("longlist"))
                         {
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             sb.Append($"\t\t\t{name} = new List<long>();\n");
-                            sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                            sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                             sb.Append("\t\t\t{\n");
                             sb.Append($"\t\t\t\t{name}.Add(reader.ReadInt64());\n");
                             sb.Append("\t\t\t}\n");
@@ -316,47 +351,47 @@ namespace ExcelTool.Parser
                         {
                             var tempS = type.Substring(5);
                             var listTType = tempS.Substring(0, tempS.Length - 1);
-                            sb.Append($"\t\tvar {name}Count = reader.ReadInt32();\n");
-                            sb.Append($"\t\tif ({name}Count > 0)\n");
+                            sb.Append($"\t\tvar {name.ToCamelCase()}Count = reader.ReadInt32();\n");
+                            sb.Append($"\t\tif ({name.ToCamelCase()}Count > 0)\n");
                             sb.Append("\t\t{\n");
                             if (listTType.Equals("int"))
                             {
                                 sb.Append($"\t\t\t{name} = new List<int>();\n");
-                                sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                                sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                                 sb.Append("\t\t\t{\n");
                                 sb.Append($"\t\t\t\t{name}.Add(reader.ReadInt32());\n");
                             }
                             else if (listTType.Equals("bool"))
                             {
                                 sb.Append($"\t\t\t{name} = new List<bool>();\n");
-                                sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                                sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                                 sb.Append("\t\t\t{\n");
                                 sb.Append($"\t\t\t\t{name}.Add(reader.ReadBoolean());\n");
                             }
                             else if (listTType.Equals("float"))
                             {
                                 sb.Append($"\t\t\t{name} = new List<float>();\n");
-                                sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                                sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                                 sb.Append("\t\t\t{\n");
                                 sb.Append($"\t\t\t\t{name}.Add(reader.ReadSingle());\n");
                             }
                             else if (listTType.Equals("long"))
                             {
                                 sb.Append($"\t\t\t{name} = new List<long>();\n");
-                                sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                                sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                                 sb.Append("\t\t\t{\n");
                                 sb.Append($"\t\t\t\t{name}.Add(reader.ReadInt64());\n");
                             }
                             else if (listTType.Equals("string"))
                             {
                                 sb.Append($"\t\t\t{name} = new List<string>();\n");
-                                sb.Append($"\t\t\tfor (int i = 0; i < {name}Count; i++)\n");
+                                sb.Append($"\t\t\tfor (int i = 0; i < {name.ToCamelCase()}Count; i++)\n");
                                 sb.Append("\t\t\t{\n");
                                 sb.Append($"\t\t\t\t{name}.Add(reader.ReadString());\n");
                             }
                             else
                             {
-                                ConsoleHelper.WriteErrorLine("数组泛型T不是指定类型");
+                                "数组泛型T不是指定类型".WriteErrorLine();
                             }
                             sb.Append("\t\t\t}\n");
                             sb.Append("\t\t}\n");
@@ -378,7 +413,11 @@ namespace ExcelTool.Parser
                     {
                         var type = header.FieldType.ToLower();
                         var name = header.FieldName;
-                        if (type.Equals("int") ||
+                        if (enumMap.ContainsKey(type))
+                        {
+                            sb.Append($"\t\twriter.Write((byte){name});\n");
+                        }
+                        else if (type.Equals("int") ||
                             type.Equals("bool") ||
                             type.Equals("float") ||
                             type.Equals("string") ||
