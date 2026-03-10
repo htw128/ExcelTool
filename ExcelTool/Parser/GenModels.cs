@@ -664,7 +664,7 @@ namespace ExcelTool.Parser
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteErrorLine(ex.ToString());
+                ex.ToString().WriteErrorLine();
                 return false;
             }
         }
