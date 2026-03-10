@@ -81,6 +81,50 @@ namespace ExcelTool
                                     bw.Write(Convert.ToInt32(data.Item2));
                                 }
                             }
+                            else if (data.Item1.Equals("uint"))
+                            {
+                                if (string.IsNullOrEmpty(data.Item2))
+                                {
+                                    bw.Write(Convert.ToUInt32(0));
+                                }
+                                else
+                                {
+                                    bw.Write(Convert.ToUInt32(data.Item2));
+                                }
+                            }
+                            else if (data.Item1.Equals("ushort"))
+                            {
+                                if (string.IsNullOrEmpty(data.Item2))
+                                {
+                                    bw.Write(Convert.ToUInt16(0));
+                                }
+                                else
+                                {
+                                    bw.Write(Convert.ToUInt16(data.Item2));
+                                }
+                            }
+                            else if (data.Item1.Equals("sbyte"))
+                            {
+                                if (string.IsNullOrEmpty(data.Item2))
+                                {
+                                    bw.Write(Convert.ToSByte(0));
+                                }
+                                else
+                                {
+                                    bw.Write(Convert.ToSByte(data.Item2));
+                                }
+                            }
+                            else if (data.Item1.Equals("byte"))
+                            {
+                                if (string.IsNullOrEmpty(data.Item2))
+                                {
+                                    bw.Write(Convert.ToByte(0));
+                                }
+                                else
+                                {
+                                    bw.Write(Convert.ToByte(data.Item2));
+                                }
+                            }
                             else if (data.Item1.Equals("bool"))
                             {
                                 if (string.IsNullOrEmpty(data.Item2))
@@ -281,6 +325,34 @@ namespace ExcelTool
                                         for (int i = 0; i < numStrs.Length; i++)
                                         {
                                             bw.Write(Convert.ToInt32(numStrs[i]));
+                                        }
+                                    }
+                                    else if (listType.Equals("uint"))
+                                    {
+                                        for (int i = 0; i < numStrs.Length; i++)
+                                        {
+                                            bw.Write(Convert.ToUInt32(numStrs[i]));
+                                        }
+                                    }
+                                    else if (listType.Equals("ushort"))
+                                    {
+                                        for (int i = 0; i < numStrs.Length; i++)
+                                        {
+                                            bw.Write(Convert.ToUInt16(numStrs[i]));
+                                        }
+                                    }
+                                    else if (listType.Equals("sbyte"))
+                                    {
+                                        for (int i = 0; i < numStrs.Length; i++)
+                                        {
+                                            bw.Write(Convert.ToSByte(numStrs[i]));
+                                        }
+                                    }
+                                    else if (listType.Equals("byte"))
+                                    {
+                                        for (int i = 0; i < numStrs.Length; i++)
+                                        {
+                                            bw.Write(Convert.ToByte(numStrs[i]));
                                         }
                                     }
                                     else if (listType.Equals("bool"))

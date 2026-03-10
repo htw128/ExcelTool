@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace ExcelTool
+namespace ExcelTool.Parser
 {
     public class TableExcelExportBytes
     {

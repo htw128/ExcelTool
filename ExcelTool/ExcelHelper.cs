@@ -3,6 +3,7 @@ using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using ExcelTool.Parser;
 
 namespace ExcelTool
 {
@@ -12,36 +13,41 @@ namespace ExcelTool
         {
             try
             {
-                var headers = new List<TableExcelHeader>();
-                IWorkbook wk = null;
-                string extension = Path.GetExtension(fileName);
-                FileStream fs = File.OpenRead(fileName);
-                if (extension.Equals(".xlsx"))
-                    wk = new XSSFWorkbook(fs);
+                List<TableExcelHeader> headers = new();
+
+                using FileStream fs = File.OpenRead(fileName);
+                IWorkbook wk = new XSSFWorkbook(fs);
                 ISheet sheet = wk.GetSheetAt(0);
-                IRow row = sheet.GetRow(0);  //读取当前第一行的数据
-                var descRow = sheet.GetRow(1);//读取注释
-                for (int j = 0; j < row.LastCellNum; j++)
+
+                IRow nameRow = sheet.GetRow(0);   // 字段名
+                IRow typeRow = sheet.GetRow(1);   // 类型
+                IRow descRow = sheet.GetRow(2);   // 注释
+
+                for (int j = 0; j < nameRow.LastCellNum; j++)
                 {
-                    string value = row.GetCell(j).ToString();
-                    var descValue = descRow.GetCell(j) == null ? "" : descRow.GetCell(j).ToString();
-                    var array = value.Split(',');
-                    if (array.Length != 2)
+                    string fieldName = nameRow.GetCell(j)?.ToString() ?? "";
+                    string fieldType = typeRow.GetCell(j)?.ToString() ?? "";
+                    string fieldDesc = descRow.GetCell(j)?.ToString() ?? "";
+                    
+                    if (string.IsNullOrEmpty(fieldName))
                     {
-                        ConsoleHelper.WriteErrorLine("表格第一行类型定义有异常，不是类型,命名的形式");
+                        $"列 {j} 字段名为空".WriteErrorLine();
+                        continue;
                     }
-                    else
+
+                    headers.Add(new TableExcelHeader()
                     {
-                        headers.Add(new TableExcelHeader() { FieldName = array[1], FieldType = array[0], FieldDesc = descValue });
-                    }
+                        FieldName = fieldName,
+                        FieldType = fieldType,
+                        FieldDesc = fieldDesc
+                    });
                 }
-                fs.Close();
-                fs.Dispose();
+
                 return headers;
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteErrorLine(ex.ToString());
+                ex.ToString().WriteErrorLine();
                 return null;
             }
         }
@@ -52,37 +58,60 @@ namespace ExcelTool
             {
                 var excelHeader = ExcelHeaders(fileName);
                 var tableRows = new List<TableExcelRow>();
-                IWorkbook wk = null;
-                string extension = Path.GetExtension(fileName);
-                FileStream fs = File.OpenRead(fileName);
-                if (extension.Equals(".xlsx"))
-                    wk = new XSSFWorkbook(fs);
+
+                using FileStream fs = File.OpenRead(fileName);
+                IWorkbook wk = new XSSFWorkbook(fs);
                 ISheet sheet = wk.GetSheetAt(0);
-                //跳过注释读取数据
-                for (int i = 2; i <= sheet.LastRowNum; i++)
+
+                for (int i = 6; i <= sheet.LastRowNum; i++)
                 {
-                    var row = sheet.GetRow(i);
+                    IRow row = sheet.GetRow(i);
+                    if (row == null) continue;
+
                     var tableExcelRow = new TableExcelRow();
+
                     for (int j = 0; j < excelHeader.Count; j++)
                     {
-                        var cellValue = row.GetCell(j);
-                        if (cellValue != null)
-                            tableExcelRow.Add(row.GetCell(j).ToString());
-                        else
-                            tableExcelRow.Add("");
+                        var cell = row.GetCell(j);
+                        tableExcelRow.Add(GetCellValue(cell));
                     }
+
                     tableRows.Add(tableExcelRow);
                 }
 
-                fs.Close();
-                fs.Dispose();
-                var tableExcelData = new TableExcelData(excelHeader, tableRows);
-                return tableExcelData;
+                return new TableExcelData(excelHeader, tableRows);
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteErrorLine(ex.ToString());
+                ex.ToString().WriteErrorLine();
                 return null;
+            }
+        }
+        private static string GetCellValue(ICell cell)
+        {
+            if (cell == null)
+                return "";
+
+            switch (cell.CellType)
+            {
+                case CellType.String:
+                    return cell.StringCellValue;
+
+                case CellType.Numeric:
+                    if (DateUtil.IsCellDateFormatted(cell))
+                    {
+                        return cell.DateCellValue.ToString();
+                    }
+                    return cell.NumericCellValue.ToString();
+
+                case CellType.Boolean:
+                    return cell.BooleanCellValue ? "1" : "0";
+
+                case CellType.Formula:
+                    return cell.ToString();
+
+                default:
+                    return "";
             }
         }
     }

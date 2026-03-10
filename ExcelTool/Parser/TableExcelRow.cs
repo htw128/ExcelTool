@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace ExcelTool
+namespace ExcelTool.Parser
 {
     public class TableExcelRow
     {

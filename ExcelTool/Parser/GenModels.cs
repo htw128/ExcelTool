@@ -1,8 +1,8 @@
-﻿using System;
+﻿﻿using System;
 using System.IO;
 using System.Text;
 
-namespace ExcelTool
+namespace ExcelTool.Parser
 {
     public class GenModels
     {
@@ -36,7 +36,14 @@ namespace ExcelTool
                 for (int i = 0; i < headers.Count; i++)
                 {
                     sb.Append($"\t/// <summary>\n");
-                    sb.Append($"\t/// {headers[i].FieldDesc}\n");
+                    var descLines = headers[i].FieldDesc?.Replace("\r", "").Split('\n');
+                    if (descLines != null)
+                    {
+                        foreach (var line in descLines)
+                        {
+                            sb.Append($"\t/// {line}\n");
+                        }
+                    }
                     sb.Append($"\t/// </summary>\n");
                     var type = headers[i].FieldType.ToLower();
                     if (type.Equals("vector"))
@@ -66,6 +73,22 @@ namespace ExcelTool
                     else if (type.Equals("longlist"))
                     {
                         sb.Append(string.Format("\tpublic List<long> {0}", headers[i].FieldName));
+                    }
+                    else if (type.Equals("uintlist"))
+                    {
+                        sb.Append(string.Format("\tpublic List<uint> {0}", headers[i].FieldName));
+                    }
+                    else if (type.Equals("ushortlist"))
+                    {
+                        sb.Append(string.Format("\tpublic List<ushort> {0}", headers[i].FieldName));
+                    }
+                    else if (type.Equals("sbytelist"))
+                    {
+                        sb.Append(string.Format("\tpublic List<sbyte> {0}", headers[i].FieldName));
+                    }
+                    else if (type.Equals("bytelist"))
+                    {
+                        sb.Append(string.Format("\tpublic List<byte> {0}", headers[i].FieldName));
                     }
                     else if (type.Contains("list<"))
                     {
@@ -100,7 +123,8 @@ namespace ExcelTool
                     {
                         sb.Append(string.Format("\tpublic {0} {1}", headers[i].FieldType.ToLower(), headers[i].FieldName));
                     }
-                    sb.Append(" { get; set; }\n");
+                    sb.Append(" { get; set; }\n\n");
+                    
                 }
                 sb.Append("\n\tpublic void DeSerialize(BinaryReader reader)\n");
                 sb.Append("\t{\n");
@@ -111,6 +135,22 @@ namespace ExcelTool
                     if (type.Equals("int"))
                     {
                         sb.Append($"\t\t{name} = reader.ReadInt32();\n");
+                    }
+                    else if (type.Equals("uint"))
+                    {
+                        sb.Append($"\t\t{name} = reader.ReadUInt32();\n");
+                    }
+                    else if (type.Equals("ushort"))
+                    {
+                        sb.Append($"\t\t{name} = reader.ReadUInt16();\n");
+                    }
+                    else if (type.Equals("sbyte"))
+                    {
+                        sb.Append($"\t\t{name} = reader.ReadSByte();\n");
+                    }
+                    else if (type.Equals("byte"))
+                    {
+                        sb.Append($"\t\t{name} = reader.ReadByte();\n");
                     }
                     else if (type.Equals("bool"))
                     {
@@ -297,7 +337,7 @@ namespace ExcelTool
                     }
                     else
                     {
-                        ConsoleHelper.WriteErrorLine($"类型:{type}没有解析 {fileName}处理异常");
+                        $"类型:{type}没有解析 {fileName}处理异常".WriteErrorLine();
                         return false;
                     }
                 }
@@ -308,7 +348,14 @@ namespace ExcelTool
                 {
                     var type = header.FieldType.ToLower();
                     var name = header.FieldName;
-                    if (type.Equals("int") || type.Equals("bool") || type.Equals("float") || type.Equals("string"))
+                    if (type.Equals("int") || 
+                        type.Equals("bool") || 
+                        type.Equals("float") || 
+                        type.Equals("string") || 
+                        type.Equals("uint") || 
+                        type.Equals("ushort") || 
+                        type.Equals("sbyte") || 
+                        type.Equals("byte"))
                     {
                         sb.Append($"\t\twriter.Write({name});\n");
                     }
