@@ -139,6 +139,9 @@ namespace ExcelTool.Parser
                     else if (type.Equals("uint"))
                     {
                         sb.Append($"\t\t{name} = reader.ReadUInt32();\n");
+                    }else if (type.Equals("short"))
+                    {
+                        sb.Append($"\t\t{name} = reader.ReadInt16();\n");
                     }
                     else if (type.Equals("ushort"))
                     {
@@ -354,6 +357,7 @@ namespace ExcelTool.Parser
                         type.Equals("string") || 
                         type.Equals("uint") || 
                         type.Equals("ushort") || 
+                        type.Equals("short") ||
                         type.Equals("sbyte") || 
                         type.Equals("byte"))
                     {

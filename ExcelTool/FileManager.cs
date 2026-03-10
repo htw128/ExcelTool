@@ -91,17 +91,13 @@ namespace ExcelTool
                                 {
                                     bw.Write(Convert.ToUInt32(data.Item2));
                                 }
+                            }else if (data.Item1.Equals("short"))
+                            {
+                                bw.Write(string.IsNullOrEmpty(data.Item2) ? Convert.ToInt16(0) : Convert.ToInt16(data.Item2));
                             }
                             else if (data.Item1.Equals("ushort"))
                             {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToUInt16(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToUInt16(data.Item2));
-                                }
+                                bw.Write(string.IsNullOrEmpty(data.Item2) ? Convert.ToUInt16(0) : Convert.ToUInt16(data.Item2));
                             }
                             else if (data.Item1.Equals("sbyte"))
                             {
@@ -160,14 +156,7 @@ namespace ExcelTool
                             }
                             else if (data.Item1.Equals("string"))
                             {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write("");
-                                }
-                                else
-                                {
-                                    bw.Write(data.Item2.ToString());
-                                }
+                                bw.Write(string.IsNullOrEmpty(data.Item2) ? "" : data.Item2.ToString());
                             }
                             else if (data.Item1.Equals("long"))
                             {
@@ -334,11 +323,18 @@ namespace ExcelTool
                                             bw.Write(Convert.ToUInt32(numStrs[i]));
                                         }
                                     }
+                                    else if (listType.Equals("short"))
+                                    {
+                                        foreach (string t in numStrs)
+                                        {
+                                            bw.Write(Convert.ToInt16(t));
+                                        }
+                                    }
                                     else if (listType.Equals("ushort"))
                                     {
-                                        for (int i = 0; i < numStrs.Length; i++)
+                                        foreach (string t in numStrs)
                                         {
-                                            bw.Write(Convert.ToUInt16(numStrs[i]));
+                                            bw.Write(Convert.ToUInt16(t));
                                         }
                                     }
                                     else if (listType.Equals("sbyte"))
