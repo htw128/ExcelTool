@@ -79,7 +79,7 @@ namespace ExcelTool
                 }
                 ISheet sheet = wk.GetSheetAt(sheetNum);
 
-                for (int i = 6; i <= sheet.LastRowNum; i++)
+                for (int i = 5; i <= sheet.LastRowNum; i++)
                 {
                     IRow row = sheet.GetRow(i);
                     if (row == null) continue;
