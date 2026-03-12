@@ -63,7 +63,7 @@ namespace ExcelTool
             }
         }
 
-        public static TableExcelData ExcelDatas(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
+        public static TableExcelData ExcelData(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
         {
             try
             {

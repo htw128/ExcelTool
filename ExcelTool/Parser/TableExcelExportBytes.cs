@@ -25,7 +25,7 @@ namespace ExcelTool.Parser
                 
                 for (int sheetNum = 0; ; sheetNum++)
                 {
-                    var tableData = ExcelHelper.ExcelDatas(fileName, out string sheetName, out int sheetCount, sheetNum);
+                    var tableData = ExcelHelper.ExcelData(fileName, out string sheetName, out int sheetCount, sheetNum);
                     if (tableData == null || sheetNum >= sheetCount)
                         break;
 

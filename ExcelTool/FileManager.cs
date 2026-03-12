@@ -125,11 +125,12 @@ namespace ExcelTool
                             {
                                 if (string.IsNullOrEmpty(data.Item2))
                                 {
-                                    bw.Write(Convert.ToBoolean(false));
+                                    bw.Write(false);
                                 }
                                 else
                                 {
-                                    bw.Write(Convert.ToBoolean(data.Item2));
+                                    string v = data.Item2.Trim().ToLower();
+                                    bw.Write(v is "true" or "1");
                                 }
                             }
                             else if (data.Item1.Equals("float"))
