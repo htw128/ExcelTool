@@ -678,9 +678,9 @@ namespace ExcelTool.Parser
                     sb.Append("\tpublic void Serialize(BinaryWriter writer)\n");
                     sb.Append("\t{\n");
                     sb.Append($"\t\twriter.Write(this.m_{sheetName.ToCamelCase()}Infos.Count);\n");
-                    sb.Append($"\t\tfor (uint i = 0; i < this.m_{sheetName.ToCamelCase()}Infos.Count; i++)\n");
+                    sb.Append($"\t\tforeach ({sheetName} {sheetName.ToCamelCase()} in this.m_{sheetName.ToCamelCase()}Infos.Values)\n");
                     sb.Append("\t\t{\n");
-                    sb.Append($"\t\t\tthis.m_{sheetName.ToCamelCase()}Infos[i].Serialize(writer);\n");
+                    sb.Append($"\t\t\t{sheetName.ToCamelCase()}.Serialize(writer);\n");
                     sb.Append("\t\t}\n");
                     sb.Append("\t}\n\n");
                     sb.Append($"\tpublic {sheetName} QueryById(uint id)\n");
