@@ -5,8 +5,8 @@ namespace ExcelTool.Parser
 {
     public class TableExcelData
     {
-        private List<TableExcelHeader> headers = new List<TableExcelHeader>();
-        private List<TableExcelRow> rows = new List<TableExcelRow>();
+        List<TableExcelHeader> headers = new();
+        List<TableExcelRow> rows = new();
         public int CollonCount = 0;
         public int RowCounts = 0;
 

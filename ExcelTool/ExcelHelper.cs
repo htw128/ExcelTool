@@ -13,10 +13,10 @@ namespace ExcelTool
         {
             try
             {
-                List<TableExcelHeader> headers = new();
+                List<TableExcelHeader> headers = [];
 
                 using FileStream fs = File.OpenRead(fileName);
-                IWorkbook wk = new XSSFWorkbook(fs);
+                XSSFWorkbook wk = new(fs);
                 
                 sheetCount = wk.NumberOfSheets;
                 if (sheetNum >= sheetCount)
@@ -27,6 +27,10 @@ namespace ExcelTool
                 
                 ISheet sheet = wk.GetSheetAt(sheetNum);
                 sheetName = sheet.SheetName;
+                if (sheetName.StartsWith('#'))
+                {
+                    return null;
+                }
                 
                 IRow nameRow = sheet.GetRow(0);   // 字段名
                 IRow typeRow = sheet.GetRow(1);   // 类型
@@ -73,10 +77,11 @@ namespace ExcelTool
                 using FileStream fs = File.OpenRead(fileName);
                 IWorkbook wk = new XSSFWorkbook(fs);
 
-                if (sheetNum >= sheetCount)
+                if (sheetNum >= sheetCount || sheetName.StartsWith('#'))
                 {
                     return null;
                 }
+                
                 ISheet sheet = wk.GetSheetAt(sheetNum);
 
                 for (int i = 5; i <= sheet.LastRowNum; i++)
