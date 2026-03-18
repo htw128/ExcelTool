@@ -7,16 +7,6 @@ namespace ExcelTool.Parser
 {
     public static class GenModels
     {
-        // ── 枚举类型映射（key: 小写类型名，value: C# 枚举类型名）──────────────
-        // 新增枚举类型只改这里
-        private static readonly Dictionary<string, string> EnumMap = new()
-        {
-            { "killmode",          "KillMode"          },
-            { "mixingtype",        "MixingType"        },
-            { "containertype",     "ContainerType"     },
-            { "blendcrossfadetype","BlendCrossFadeType" },
-        };
-
         /// <summary>
         /// 生成对应的 C# Model 类
         /// </summary>
@@ -37,7 +27,7 @@ namespace ExcelTool.Parser
                 for (int sheetNum = 0; ; sheetNum++)
                 {
                     var headers = ExcelHelper.ExcelHeaders(fileName, out string sheetName, out int sheetCount, sheetNum);
-                    if (headers == null || headers.Count == 0 || sheetName.StartsWith('#') || sheetNum > sheetCount)
+                    if (headers == null || headers.Count == 0 || sheetName.StartsWith("#") || sheetNum > sheetCount)
                         break;
 
                     var sb = new StringBuilder();
@@ -109,13 +99,6 @@ namespace ExcelTool.Parser
                 var type = header.FieldType.ToLower();
                 var name = header.FieldName;
 
-                // 枚举
-                if (EnumMap.TryGetValue(type, out var enumCsType))
-                {
-                    sb.Append($"\t\t{name} = ({enumCsType})reader.ReadByte();\n");
-                    continue;
-                }
-
                 // 注册表中的具名类型
                 var desc = TypeRegistry.Get(type);
                 if (desc != null)
@@ -133,13 +116,12 @@ namespace ExcelTool.Parser
                         $"list<T> 的元素类型 \"{elemType}\" 未注册 ({sheetName})".WriteErrorLine();
                         continue;
                     }
-                    // 读取表达式复用注册表中的 GenDeserialize 只取 ReadXxx() 部分比较麻烦，
-                    // 这里直接用公共辅助方法生成片段
                     sb.Append(TypeRegistry.GenListDeserialize(name, elemDesc.CSharpType, GetReadExpr(elemDesc)));
                     continue;
                 }
 
-                $"类型 \"{type}\" 未注册，{sheetName} 处理异常".WriteErrorLine();
+                // 兜底：当枚举处理，类型名直接用 FieldType 原值（保留大小写）
+                sb.Append($"\t\t{name} = ({header.FieldType})reader.ReadByte();\n");
             }
 
             sb.Append("\t}\n");
@@ -158,13 +140,6 @@ namespace ExcelTool.Parser
                 var type = header.FieldType.ToLower();
                 var name = header.FieldName;
 
-                // 枚举
-                if (EnumMap.ContainsKey(type))
-                {
-                    sb.Append($"\t\twriter.Write((byte){name});\n");
-                    continue;
-                }
-
                 // 注册表
                 var desc = TypeRegistry.Get(type);
                 if (desc != null)
@@ -180,7 +155,8 @@ namespace ExcelTool.Parser
                     continue;
                 }
 
-                $"类型 \"{type}\" 未注册，{sheetName} 处理异常".WriteErrorLine();
+                // 兜底：当枚举处理
+                sb.Append($"\t\twriter.Write((byte){name});\n");
             }
 
             sb.Append("\t}\n");
@@ -230,9 +206,6 @@ namespace ExcelTool.Parser
         {
             var lower = fieldType.ToLower();
 
-            if (EnumMap.TryGetValue(lower, out var enumType))
-                return enumType;
-
             var desc = TypeRegistry.Get(lower);
             if (desc != null)
                 return desc.CSharpType;
@@ -244,8 +217,8 @@ namespace ExcelTool.Parser
                 return elemDesc != null ? $"List<{elemDesc.CSharpType}>" : $"List<{elemType}>";
             }
 
-            // 兜底：直接用原始类型名（可能是用户自定义类型）
-            return fieldType.ToLower();
+            // 兜底：当枚举处理，保留原始类型名大小写
+            return fieldType;
         }
 
         /// <summary>尝试解析 list&lt;T&gt; 语法，成功返回元素类型名</summary>

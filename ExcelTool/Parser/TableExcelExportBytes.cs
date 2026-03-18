@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -10,13 +10,6 @@ namespace ExcelTool.Parser
         {
             try
             {
-                Dictionary<string, string> enumMap = new()
-                {
-                    { "killmode", "byte" },
-                    { "mixingtype", "byte" },
-                    { "containertype", "byte" },
-                    { "blendcrossfadetype", "byte" }
-                };
                 FileInfo fileInfo = new(fileName);
                 if (string.IsNullOrEmpty(outputDir))
                 {
@@ -44,9 +37,10 @@ namespace ExcelTool.Parser
                             var type = tableData.Headers[i].FieldType.ToLower();
                             var data = row.StrList[i];
 
-                            if (enumMap.ContainsKey(type))
+                            // 未在 TypeRegistry 注册的类型（且不是 list<T>）当枚举处理，写入 byte
+                            if (!TypeRegistry.Contains(type) && !IsGenericList(type))
                             {
-                                type = enumMap[type];
+                                type = "byte";
                             }
 
                             datas.Add(new Tuple<string, string>(type, data));
@@ -63,5 +57,8 @@ namespace ExcelTool.Parser
                 return false;
             }
         }
+
+        private static bool IsGenericList(string type) =>
+            type.StartsWith("list<") && type.EndsWith(">");
     }
 }
