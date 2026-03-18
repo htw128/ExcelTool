@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -15,388 +15,63 @@ namespace ExcelTool
             if (string.IsNullOrEmpty(dirPath))
                 return false;
             if (Directory.Exists(dirPath))
-            {
                 Directory.Delete(dirPath, true);
-            }
             Directory.CreateDirectory(dirPath);
             return true;
         }
 
-        /// <summary>
-        /// 将数据写入二进制文件
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="data">继承自IBinarySerialize的数据</param>
+        /// <summary>将数据写入二进制文件（IBinarySerializable 版本）</summary>
         public static bool WriteBinaryDataToFile(string filePath, IBinarySerializable data)
         {
-            if (string.IsNullOrEmpty(filePath))
-                return false;
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-            using (var fileStream = new FileStream(filePath, FileMode.Create))
-            {
-                using (var bw = new BinaryWriter(fileStream))
-                {
-                    data.Serialize(bw);
-                    bw.Flush();
-                    bw.Close();
-                }
-                fileStream.Close();
-            }
+            if (string.IsNullOrEmpty(filePath)) return false;
+            if (File.Exists(filePath)) File.Delete(filePath);
+
+            using var fileStream = new FileStream(filePath, FileMode.Create);
+            using var bw = new BinaryWriter(fileStream);
+            data.Serialize(bw);
+            bw.Flush();
             return true;
         }
 
         /// <summary>
-        /// 将数据写入二进制文件
+        /// 将数据写入二进制文件。
+        /// 类型名（Item1）须与 <see cref="TypeRegistry"/> 中注册的 key 一致（不区分大小写）。
+        /// 额外支持 list&lt;T&gt; 泛型语法。
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="datas">类型(小写)和value的字符串键值对</param>
-        /// <returns></returns>
         public static bool WriteBinaryDatasToFile(string filePath, List<Tuple<string, string>> datas)
         {
             try
             {
-                if (string.IsNullOrEmpty(filePath))
-                    return false;
-                if (File.Exists(filePath))
+                if (string.IsNullOrEmpty(filePath)) return false;
+                if (File.Exists(filePath)) File.Delete(filePath);
+
+                using var fileStream = new FileStream(filePath, FileMode.Create);
+                using var bw = new BinaryWriter(fileStream);
+
+                foreach (var (rawType, value) in datas)
                 {
-                    File.Delete(filePath);
-                }
-                using (var fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    using (var bw = new BinaryWriter(fileStream))
+                    var type = rawType.ToLower();
+
+                    // ── 优先从注册表查找 ──────────────────────────────
+                    var desc = TypeRegistry.Get(type);
+                    if (desc != null)
                     {
-                        foreach (var data in datas)
-                        {
-                            if (data.Item1.Equals("int"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToInt32(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("uint"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToUInt32(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToUInt32(data.Item2));
-                                }
-                            }else if (data.Item1.Equals("short"))
-                            {
-                                bw.Write(string.IsNullOrEmpty(data.Item2) ? Convert.ToInt16(0) : Convert.ToInt16(data.Item2));
-                            }
-                            else if (data.Item1.Equals("ushort"))
-                            {
-                                bw.Write(string.IsNullOrEmpty(data.Item2) ? Convert.ToUInt16(0) : Convert.ToUInt16(data.Item2));
-                            }
-                            else if (data.Item1.Equals("sbyte"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToSByte(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToSByte(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("byte"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToByte(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToByte(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("bool"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(false);
-                                }
-                                else
-                                {
-                                    string v = data.Item2.Trim().ToLower();
-                                    bw.Write(v is "true" or "1");
-                                }
-                            }
-                            else if (data.Item1.Equals("float"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToSingle(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToSingle(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("double"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToDouble(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToDouble(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("string"))
-                            {
-                                bw.Write(string.IsNullOrEmpty(data.Item2) ? "" : data.Item2.ToString());
-                            }
-                            else if (data.Item1.Equals("long"))
-                            {
-                                if (string.IsNullOrEmpty(data.Item2))
-                                {
-                                    bw.Write(Convert.ToInt64(0));
-                                }
-                                else
-                                {
-                                    bw.Write(Convert.ToInt64(data.Item2));
-                                }
-                            }
-                            else if (data.Item1.Equals("vector"))
-                            {
-                                //[1.2,3.4,5.6]
-                                var str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    str = str.Replace("]", "").Replace("[", "");
-                                    var numStrs = str.Split(',');
-                                    int vectorCount = 3;
-                                    bw.Write(vectorCount);
-                                    for (int i = 0; i < vectorCount; i++)
-                                    {
-                                        float v = Convert.ToSingle(numStrs[i]);
-                                        bw.Write(v);
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("vectorlist")) //List<Vector>类型
-                            {
-                                //[[1.2,3.4,5.6],[2.2,3.4,5.6],[3.2,3.4,5.6]]
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    str = str.Replace("]", "").Replace("[", "");
-                                    var numStrs = str.Split(',');
-                                    bw.Write(Convert.ToInt32(numStrs.Length / 3));
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        if (i % 3 == 0)
-                                            bw.Write(Convert.ToInt32(3));
-                                        bw.Write(Convert.ToSingle(numStrs[i]));
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("intlist"))
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        bw.Write(Convert.ToInt32(numStrs[i]));
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("floatlist"))
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        bw.Write(Convert.ToSingle(numStrs[i]));
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("boollist"))
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        bw.Write(Convert.ToBoolean(numStrs[i]));
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("stringlist"))
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        bw.Write(numStrs[i]);
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Equals("longlist"))
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    for (int i = 0; i < numStrs.Length; i++)
-                                    {
-                                        bw.Write(Convert.ToInt64(numStrs[i]));
-                                    }
-                                }
-                            }
-                            else if (data.Item1.Contains("list<")) //泛型数组类型
-                            {
-                                string str = data.Item2.ToString();
-                                if (string.IsNullOrEmpty(str))
-                                {
-                                    bw.Write(Convert.ToInt32(0));
-                                }
-                                else
-                                {
-                                    var numStrs = str.Split(',');
-                                    bw.Write(numStrs.Length);
-                                    var tempS = data.Item1.Substring(5);
-                                    var listType = tempS.Substring(0, tempS.Length - 1);
-                                    if (listType.Equals("int"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToInt32(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("uint"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToUInt32(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("short"))
-                                    {
-                                        foreach (string t in numStrs)
-                                        {
-                                            bw.Write(Convert.ToInt16(t));
-                                        }
-                                    }
-                                    else if (listType.Equals("ushort"))
-                                    {
-                                        foreach (string t in numStrs)
-                                        {
-                                            bw.Write(Convert.ToUInt16(t));
-                                        }
-                                    }
-                                    else if (listType.Equals("sbyte"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToSByte(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("byte"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToByte(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("bool"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToBoolean(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("float"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToSingle(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("long"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToInt64(numStrs[i]));
-                                        }
-                                    }
-                                    else if (listType.Equals("string"))
-                                    {
-                                        for (int i = 0; i < numStrs.Length; i++)
-                                        {
-                                            bw.Write(Convert.ToString(numStrs[i]));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        ConsoleHelper.WriteErrorLine("数组类型List<T>,T不是支持的Int,Float,String这三种类型，需要扩展类型");
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                ConsoleHelper.WriteErrorLine($"写入二进制文件，数据类型{data.Item1}没有适配");
-                                return false;
-                            }
-                        }
-                        bw.Flush();
-                        bw.Close();
+                        desc.WriteBinary(bw, value);
+                        continue;
                     }
-                    fileStream.Close();
+
+                    // ── list<T> 泛型语法（如 list<int>）─────────────
+                    if (type.StartsWith("list<") && type.EndsWith(">"))
+                    {
+                        WriteGenericList(bw, type, value);
+                        continue;
+                    }
+
+                    ConsoleHelper.WriteErrorLine($"写入二进制文件：数据类型 \"{rawType}\" 未注册，请在 TypeRegistry 中添加");
+                    return false;
                 }
+
+                bw.Flush();
                 return true;
             }
             catch (Exception ex)
@@ -406,167 +81,104 @@ namespace ExcelTool
             }
         }
 
-        /// <summary>
-        /// 从内存流中读取二进制
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
+        // ──────────────────────────────────────────────────────────────
+        //  list<T> 泛型列表写入（T 必须是已在 TypeRegistry 注册的基础类型）
+        // ──────────────────────────────────────────────────────────────
+        private static void WriteGenericList(BinaryWriter bw, string fullType, string value)
+        {
+            // fullType 形如 "list<int>"
+            var innerType = fullType[5..^1]; // 去掉 "list<" 和 ">"
+            var elemDesc  = TypeRegistry.Get(innerType);
+            if (elemDesc == null)
+            {
+                ConsoleHelper.WriteErrorLine($"list<T> 的元素类型 \"{innerType}\" 未注册，请在 TypeRegistry 中添加");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(value))
+            {
+                bw.Write(0);
+                return;
+            }
+
+            var parts = value.Split(',');
+            bw.Write(parts.Length);
+            foreach (var p in parts)
+                elemDesc.WriteBinary(bw, p);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  其余文件工具方法（不涉及类型系统，保持不变）
+        // ──────────────────────────────────────────────────────────────
+
         public static bool ReadBinaryDataFromBytes(byte[] bytes, ref IBinarySerializable data)
         {
-            if (bytes == null)
-                return false;
-            using (var memoryStream = new MemoryStream(bytes))
-            {
-                using (var br = new BinaryReader(memoryStream))
-                {
-                    data.DeSerialize(br);
-                    br.Close();
-                }
-                memoryStream.Close();
-            }
+            if (bytes == null) return false;
+            using var ms = new MemoryStream(bytes);
+            using var br = new BinaryReader(ms);
+            data.DeSerialize(br);
             return true;
         }
 
-        /// <summary>
-        /// 读取二进制文件
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="data"></param>
-        /// <returns></returns>
         public static bool ReadBinaryDataFromFile(string filePath, ref IBinarySerializable data)
         {
-            if (string.IsNullOrEmpty(filePath))
-            {
-                return false;
-            }
-            using (var fileStream = new FileStream(filePath, FileMode.Open))
-            {
-                using (var br = new BinaryReader(fileStream))
-                {
-                    data.DeSerialize(br);
-                    br.Close();
-                }
-                fileStream.Close();
-            }
+            if (string.IsNullOrEmpty(filePath)) return false;
+            using var fs = new FileStream(filePath, FileMode.Open);
+            using var br = new BinaryReader(fs);
+            data.DeSerialize(br);
             return true;
         }
 
         public static bool WriteBytesToFile(string filePath, byte[] data)
         {
-            if (string.IsNullOrEmpty(filePath))
-                return false;
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-            var file = new FileInfo(filePath);
-            using (Stream sw = file.Create())
-            {
-                sw.Write(data, 0, data.Length);
-                sw.Flush();
-                sw.Close();
-            }
+            if (string.IsNullOrEmpty(filePath)) return false;
+            if (File.Exists(filePath)) File.Delete(filePath);
+            using Stream sw = new FileInfo(filePath).Create();
+            sw.Write(data, 0, data.Length);
+            sw.Flush();
             return true;
         }
 
-        /// <summary>
-        /// 将字符串写入文件
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        public static bool WriteToFile(string filePath, string context)
-        {
-            return WriteToFile(filePath, context, Encoding.Default);
-        }
+        public static bool WriteToFile(string filePath, string context) =>
+            WriteToFile(filePath, context, Encoding.Default);
 
         public static bool WriteToFile(string filePath, string context, Encoding encoding)
         {
-            if (string.IsNullOrEmpty(filePath))
-                return false;
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
-            using (FileStream fs = new FileStream(filePath, FileMode.Create))
-            {
-                var data = encoding.GetBytes(context);
-                fs.Write(data, 0, data.Length);
-                fs.Flush();
-                fs.Close();
-            }
+            if (string.IsNullOrEmpty(filePath)) return false;
+            if (File.Exists(filePath)) File.Delete(filePath);
+            using var fs = new FileStream(filePath, FileMode.Create);
+            var data = encoding.GetBytes(context);
+            fs.Write(data, 0, data.Length);
+            fs.Flush();
             return true;
         }
 
-        /// <summary>
-        /// 按行读取
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
         public static string ReadAllByLine(string path)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-            {
-                return string.Empty;
-            }
-            StringBuilder sb = new StringBuilder();
-            using (StreamReader sr = new StreamReader(path, Encoding.Default))
-            {
-                string line;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    sb.AppendLine(line);
-                }
-                sr.Close();
-            }
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return string.Empty;
+            var sb = new StringBuilder();
+            using var sr = new StreamReader(path, Encoding.Default);
+            string line;
+            while ((line = sr.ReadLine()) != null)
+                sb.AppendLine(line);
             return sb.ToString();
         }
 
-        public static byte[] ReadAllBytes(string path)
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-            {
-                return null;
-            }
-            return File.ReadAllBytes(path);
-        }
+        public static byte[] ReadAllBytes(string path) =>
+            string.IsNullOrEmpty(path) || !File.Exists(path) ? null : File.ReadAllBytes(path);
 
-        /// <summary>
-        /// 修改文件内容
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="normalStr"></param>
-        /// <param name="newStr"></param>
         public static void ReplaceContent(string path, string normalStr, string newStr)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-            {
-                return;
-            }
-            string strContent = File.ReadAllText(path);
-            strContent = strContent.Replace(normalStr, newStr);
-            File.WriteAllText(path, strContent);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            File.WriteAllText(path, File.ReadAllText(path).Replace(normalStr, newStr));
         }
 
-        /// <summary>
-        /// 批量修改文件内容
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="newStr"></param>
-        /// <param name="normalStrs"></param>
         public static void ReplaceContent(string path, string newStr, params string[] normalStrs)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-            {
-                return;
-            }
-            string strContent = File.ReadAllText(path);
-            for (int i = 0; i < normalStrs.Length; i++)
-            {
-                strContent = strContent.Replace(normalStrs[i], newStr);
-            }
-            File.WriteAllText(path, strContent);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
+            string content = File.ReadAllText(path);
+            foreach (var s in normalStrs) content = content.Replace(s, newStr);
+            File.WriteAllText(path, content);
         }
     }
 }
