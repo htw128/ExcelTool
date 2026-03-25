@@ -10,16 +10,6 @@ namespace ExcelTool
     /// </summary>
     public static class FileManager
     {
-        public static bool CreateDir(string dirPath)
-        {
-            if (string.IsNullOrEmpty(dirPath))
-                return false;
-            if (Directory.Exists(dirPath))
-                Directory.Delete(dirPath, true);
-            Directory.CreateDirectory(dirPath);
-            return true;
-        }
-
         /// <summary>将数据写入二进制文件（IBinarySerializable 版本）</summary>
         public static bool WriteBinaryDataToFile(string filePath, IBinarySerializable data)
         {
@@ -67,7 +57,7 @@ namespace ExcelTool
                         continue;
                     }
 
-                    ConsoleHelper.WriteErrorLine($"写入二进制文件：数据类型 \"{rawType}\" 未注册，请在 TypeRegistry 中添加");
+                    $"写入二进制文件：数据类型 \"{rawType}\" 未注册，请在 TypeRegistry 中添加".WriteErrorLine();
                     return false;
                 }
 
@@ -76,7 +66,7 @@ namespace ExcelTool
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteErrorLine(ex.ToString());
+                ex.ToString().WriteErrorLine();
                 return false;
             }
         }
@@ -91,7 +81,7 @@ namespace ExcelTool
             var elemDesc  = TypeRegistry.Get(innerType);
             if (elemDesc == null)
             {
-                ConsoleHelper.WriteErrorLine($"list<T> 的元素类型 \"{innerType}\" 未注册，请在 TypeRegistry 中添加");
+                $"list<T> 的元素类型 \"{innerType}\" 未注册，请在 TypeRegistry 中添加".WriteErrorLine();
                 return;
             }
 
@@ -140,7 +130,7 @@ namespace ExcelTool
         }
 
         public static bool WriteToFile(string filePath, string context) =>
-            WriteToFile(filePath, context, Encoding.Default);
+            WriteToFile(filePath, context, new UTF8Encoding(false));
 
         public static bool WriteToFile(string filePath, string context, Encoding encoding)
         {

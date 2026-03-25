@@ -29,6 +29,9 @@ namespace ExcelTool
         /// 生成 Serialize 方法体片段（变量名 → 代码行）
         /// </summary>
         public Func<string, string> GenSerialize { get; init; }
+        
+        /// <summary>用于代码生成的单次读取表达式，例如 "reader.ReadInt32()"</summary>
+        public string ReadExpression { get; init; }
     }
 
     /// <summary>
@@ -158,6 +161,7 @@ namespace ExcelTool
             {
                 TypeName       = typeName,
                 CSharpType     = csType,
+                ReadExpression = readExpr,
                 WriteBinary    = writeBinary,
                 GenDeserialize = name => $"\t\t{name} = {readExpr};\n",
                 GenSerialize   = name => $"\t\twriter.Write({name});\n",
@@ -194,7 +198,7 @@ namespace ExcelTool
         /// <summary>生成 List&lt;T&gt; 的 DeSerialize 片段</summary>
         public static string GenListDeserialize(string name, string elemCsType, string readElemExpr)
         {
-            var camel = StringExtensions.ToCamelCase(name);
+            string camel = name.ToCamelCase();
             return
                 $"\t\tvar {camel}Count = reader.ReadInt32();\n" +
                 $"\t\tif ({camel}Count > 0)\n" +
@@ -231,7 +235,7 @@ namespace ExcelTool
 
         private static string GenVectorListDeserialize(string name)
         {
-            var camel = StringExtensions.ToCamelCase(name);
+            string camel = name.ToCamelCase();
             return
                 $"\t\tvar {camel}Count = reader.ReadInt32();\n" +
                 $"\t\tif ({camel}Count > 0)\n" +

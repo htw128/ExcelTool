@@ -9,46 +9,58 @@ namespace ExcelTool
 {
     public static class ExcelHelper
     {
-        public static List<TableExcelHeader> ExcelHeaders(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
+        public static List<ParsedSheet> ParseAllSheets(string fileName)
+        {
+            List<ParsedSheet> result = [];
+            try
+            {
+                using FileStream fs = File.OpenRead(fileName);
+                XSSFWorkbook wk = new(fs);
+                int sheetCount = wk.NumberOfSheets;
+
+                for (int sheetNum = 0; sheetNum < sheetCount; sheetNum++)
+                {
+                    ISheet sheet = wk.GetSheetAt(sheetNum);
+                    string sheetName = sheet.SheetName;
+
+                    // # 开头的 sheet 跳过
+                    if (string.IsNullOrEmpty(sheetName) || sheetName.StartsWith('#'))
+                        continue;
+
+                    var parsed = ParseSheet(sheet, sheetName);
+                    if (parsed != null)
+                        result.Add(parsed);
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.ToString().WriteErrorLine();
+            }
+            return result;
+        }
+
+        static ParsedSheet ParseSheet(ISheet sheet, string sheetName)
         {
             try
             {
-                List<TableExcelHeader> headers = [];
+                IRow nameRow = sheet.GetRow(0);
+                IRow typeRow = sheet.GetRow(1);
+                IRow descRow = sheet.GetRow(2);
 
-                using FileStream fs = File.OpenRead(fileName);
-                XSSFWorkbook wk = new(fs);
-                
-                sheetCount = wk.NumberOfSheets;
-                if (sheetNum >= sheetCount)
-                {
-                    sheetName = "";
-                    return null;
-                }
-                
-                ISheet sheet = wk.GetSheetAt(sheetNum);
-                sheetName = sheet.SheetName;
-                if (sheetName.StartsWith('#'))
-                {
-                    return null;
-                }
-                
-                IRow nameRow = sheet.GetRow(0);   // 字段名
-                IRow typeRow = sheet.GetRow(1);   // 类型
-                IRow descRow = sheet.GetRow(2);   // 注释
-
+                var headers = new List<TableExcelHeader>();
                 for (int j = 0; j < nameRow.LastCellNum; j++)
                 {
                     string fieldName = nameRow.GetCell(j)?.ToString() ?? "";
                     string fieldType = typeRow.GetCell(j)?.ToString() ?? "";
                     string fieldDesc = descRow.GetCell(j)?.ToString() ?? "";
-                    
+
                     if (string.IsNullOrEmpty(fieldName))
                     {
                         $"列 {j} 字段名为空".WriteErrorLine();
                         continue;
                     }
 
-                    headers.Add(new TableExcelHeader()
+                    headers.Add(new TableExcelHeader
                     {
                         FieldName = fieldName,
                         FieldType = fieldType,
@@ -56,60 +68,34 @@ namespace ExcelTool
                     });
                 }
 
-                return headers;
-            }
-            catch (Exception ex)
-            {
-                ex.ToString().WriteErrorLine();
-                sheetName = null;
-                sheetCount = 0;
-                return null;
-            }
-        }
-
-        public static TableExcelData ExcelData(string fileName, out string sheetName, out int sheetCount, int sheetNum = 0)
-        {
-            try
-            {
-                var excelHeader = ExcelHeaders(fileName, out sheetName, out sheetCount, sheetNum);
+                // 数据从第 6 行开始（0-indexed）
                 var tableRows = new List<TableExcelRow>();
-
-                using FileStream fs = File.OpenRead(fileName);
-                IWorkbook wk = new XSSFWorkbook(fs);
-
-                if (sheetNum >= sheetCount || sheetName.StartsWith('#'))
-                {
-                    return null;
-                }
-                
-                ISheet sheet = wk.GetSheetAt(sheetNum);
-
                 for (int i = 5; i <= sheet.LastRowNum; i++)
                 {
                     IRow row = sheet.GetRow(i);
                     if (row == null) continue;
 
                     var tableExcelRow = new TableExcelRow();
-
-                    for (int j = 0; j < excelHeader.Count; j++)
-                    {
-                        var cell = row.GetCell(j);
-                        tableExcelRow.Add(GetCellValue(cell));
-                    }
+                    for (int j = 0; j < headers.Count; j++)
+                        tableExcelRow.Add(GetCellValue(row.GetCell(j)));
 
                     tableRows.Add(tableExcelRow);
                 }
 
-                return new TableExcelData(excelHeader, tableRows);
+                return new ParsedSheet
+                {
+                    SheetName = sheetName,
+                    Headers   = headers,
+                    Data      = new TableExcelData(headers, tableRows),
+                };
             }
             catch (Exception ex)
             {
                 ex.ToString().WriteErrorLine();
-                sheetName = null;
-                sheetCount = 0;
                 return null;
             }
         }
+        
         private static string GetCellValue(ICell cell)
         {
             if (cell == null)
@@ -121,11 +107,7 @@ namespace ExcelTool
                     return cell.StringCellValue;
 
                 case CellType.Numeric:
-                    if (DateUtil.IsCellDateFormatted(cell))
-                    {
-                        return cell.DateCellValue.ToString();
-                    }
-                    return cell.NumericCellValue.ToString();
+                    return DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue.ToString() : cell.NumericCellValue.ToString();
 
                 case CellType.Boolean:
                     return cell.BooleanCellValue ? "1" : "0";
@@ -137,5 +119,12 @@ namespace ExcelTool
                     return "";
             }
         }
+    }
+
+    public class ParsedSheet
+    {
+        public string SheetName { get; init; }
+        public List<TableExcelHeader> Headers { get; init; }
+        public TableExcelData Data { get; init; }
     }
 }

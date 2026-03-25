@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using ExcelTool.Parser;
 
 namespace ExcelTool
@@ -46,45 +45,32 @@ namespace ExcelTool
             {
                 outputDataDir = outputCodeDir;
             }
-            
+            // TODO 使用System.CommandLine重构参数解析
             
             DirectoryInfo dirInfo = new(path);
-            FileInfo[] csvs = dirInfo.GetFiles("*.csv", SearchOption.AllDirectories);
             FileInfo[] excels = dirInfo.GetFiles("*.xlsx", SearchOption.AllDirectories);
-            if ((csvs.Length <= 0) && (excels.Length <= 0))
+            if (excels.Length <= 0)
             {
-                "当前exe目录或者目标目录没有csv文件或者excels文件,请重新设置目录".WriteErrorLine();
+                "当前exe目录或者目标目录没有excels文件,请重新设置目录".WriteErrorLine();
             }
             else
             {
                 "==========================================================".WriteSuccessLine();
-                "== 根据csv/xlsx生成模板代码和二进制文件工具             ==".WriteSuccessLine();
-                "== 说明:将exe放在csv/xlsx目录中或者exe或者传入csv根目录 ==".WriteSuccessLine();
+                "== 根据xlsx生成模板代码和二进制文件工具             ==".WriteSuccessLine();
+                "== 说明:将exe放在xlsx目录中或者exe或者传入根目录 ==".WriteSuccessLine();
                 "==========================================================".WriteSuccessLine();
 
-                List<string> genExcels = [];
-                foreach (FileInfo csv in csvs)
-                {
-                    //生成对应的xlsx文件
-                    var tempPath = CsvHelper.CsvToXlsx(csv.FullName);
-                    if (string.IsNullOrEmpty(tempPath))
-                    {
-                        $"csv:{csv.FullName}生成xlsx文件出错".WriteErrorLine();
-                    }
-                    else
-                    {
-                        genExcels.Add(tempPath);
-                    }
-                }
                 excels = dirInfo.GetFiles("*.xlsx", SearchOption.AllDirectories);
 
                 //读取
-                foreach (var file in excels)
+                foreach (FileInfo file in excels)
                 {
-                    if (file.Name.StartsWith("~$")) return;
+                    if (file.Name.StartsWith("~$")) continue;
+
+                    List<ParsedSheet> sheets = ExcelHelper.ParseAllSheets(file.FullName);
                     
                     //生成CS文件
-                    bool res = GenModels.GenCSharpModel(file.FullName, outputCodeDir, nameSpace);
+                    bool res = GenModels.GenCSharpModel(sheets, outputCodeDir, nameSpace);
                     if (res)
                     {
                         $"{file.Name}CS模板生成成功".WriteSuccessLine();
@@ -95,7 +81,7 @@ namespace ExcelTool
                     }
 
                     //生成二进制文件，如果list或者vector数据为空则写入0，要根据类型来读取csv的字段数据强转成对应的数据类型然后写入
-                    res = TableExcelExportBytes.ExportToFile(file.FullName, outputDataDir);
+                    res = TableExcelExportBytes.ExportToFile(sheets, outputDataDir);
                     if (res)
                     {
                         $"{file.Name}二进制数据生成成功".WriteSuccessLine();
@@ -105,17 +91,10 @@ namespace ExcelTool
                         $"{file.Name}二进制数据生成失败".WriteErrorLine();
                     }
                 }
+                
+                // TODO 抽象 ExcelProcess 类 处理相关流程
 
-                //删除生成的excels
-                for (int i = genExcels.Count - 1; i >= 0; i--)
-                {
-                    File.Delete(genExcels[i]);
-                }
-
-                Dictionary<int, string> dics = new();
-                new List<string>(dics.Values);
-
-                //读取测试
+                // TODO 单元测试
                 //IBinarySerializable newavList = new avatarguideTestConfig();
                 //var readOK = FileManager.ReadBinaryDataFromFile(Path.Combine(path, "avatarguideTest.bytes"), ref newavList);
                 //if (readOK)
