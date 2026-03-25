@@ -5,28 +5,20 @@ namespace ExcelTool.Parser
 {
     public class TableExcelData
     {
-        List<TableExcelHeader> headers = new();
-        List<TableExcelRow> rows = new();
-        public int CollonCount = 0;
-        public int RowCounts = 0;
+        public readonly int ColumnCount = 0;
+        public readonly int RowCounts = 0;
+        
+        public List<TableExcelHeader> Headers { get; }
+        public List<TableExcelRow> Rows { get; }
 
         public TableExcelData(IEnumerable<TableExcelHeader> headers, IEnumerable<TableExcelRow> rows)
         {
-            this.headers = headers.ToList();
-            this.rows = rows.ToList();
-            this.CollonCount = this.headers.Count;
-            this.RowCounts = this.rows.Count;
+            Headers = headers.ToList();
+            Rows = rows.ToList();
+            this.ColumnCount = Headers.Count;
+            this.RowCounts = Rows.Count;
         }
 
-        public List<TableExcelHeader> Headers
-        {
-            get { return this.headers; }
-        }
-
-        public List<TableExcelRow> Rows
-        {
-            get { return this.rows; }
-        }
 
         //TODO:待检查数据类型的合法性
         //public bool CheckUnique(out string errorMsg)

@@ -18,7 +18,7 @@ namespace ExcelTool.Parser
                     datas.Add(rowCount);
                     foreach (var row in sheet.Data.Rows)
                     {
-                        for (int i = 0; i < sheet.Data.CollonCount; i++)
+                        for (int i = 0; i < sheet.Data.ColumnCount; i++)
                         {
                             var type = sheet.Data.Headers[i].FieldType.ToLower();
                             var data = row.StrList[i];
