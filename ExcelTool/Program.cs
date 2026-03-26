@@ -76,7 +76,7 @@ namespace ExcelTool
                 {
                     if (file.Name.StartsWith("~$")) continue;
 
-                    List<ParsedSheet> sheets = ExcelHelper.ParseAllSheets(file.FullName);
+                    List<ParsedSheet> sheets = ExcelHelper.ParseAllSheets(file.FullName, out List<ParsedEnum>? enumSheets);
 
                     //生成CS文件
                     bool res = GenModels.GenCSharpModel(sheets, codeDir, nameSpace);
@@ -87,6 +87,22 @@ namespace ExcelTool
                     else
                     {
                         $"{file.Name}CS模板生成失败".WriteErrorLine();
+                    }
+                    
+                    // 生成CS枚举文件
+                    if (enumSheets.Count > 0)
+                    {
+                        bool enumRes = GenEnums.GenCSharpEnum(enumSheets, codeDir, nameSpace);
+                        if (enumRes)
+                            $"{file.Name} 枚举代码生成成功".WriteSuccessLine();
+                        else
+                            $"{file.Name} 枚举代码生成失败".WriteErrorLine();
+
+                        bool enumIdsRes = GenEnums.GenEnumIds(enumSheets, codeDir, nameSpace);
+                        if (enumIdsRes)
+                            $"{file.Name} EnumIds 生成成功".WriteSuccessLine();
+                        else
+                            $"{file.Name} EnumIds 生成失败".WriteErrorLine();
                     }
 
                     //生成二进制文件，如果list或者vector数据为空则写入0，要根据类型来读取csv的字段数据强转成对应的数据类型然后写入

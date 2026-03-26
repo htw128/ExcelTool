@@ -9,9 +9,10 @@ namespace ExcelTool
 {
     public static class ExcelHelper
     {
-        public static List<ParsedSheet> ParseAllSheets(string fileName)
+        public static List<ParsedSheet> ParseAllSheets(string fileName, out List<ParsedEnum> enumSheets)
         {
             List<ParsedSheet> result = [];
+            enumSheets = [];
             try
             {
                 using FileStream fs = File.OpenRead(fileName);
@@ -27,7 +28,13 @@ namespace ExcelTool
                     if (string.IsNullOrEmpty(sheetName) || sheetName.StartsWith('#'))
                         continue;
 
-                    var parsed = ParseSheet(sheet, sheetName);
+                    if (sheetName.Equals("__enums__", StringComparison.OrdinalIgnoreCase))
+                    {
+                        enumSheets = ParseEnumSheet(sheet);
+                        continue;
+                    }
+
+                    ParsedSheet parsed = ParseSheet(sheet, sheetName);
                     if (parsed != null)
                         result.Add(parsed);
                 }
@@ -47,7 +54,7 @@ namespace ExcelTool
                 IRow typeRow = sheet.GetRow(1);
                 IRow descRow = sheet.GetRow(2);
 
-                var headers = new List<TableExcelHeader>();
+                List<TableExcelHeader> headers = [];
                 for (int j = 0; j < nameRow.LastCellNum; j++)
                 {
                     string fieldName = nameRow.GetCell(j)?.ToString() ?? "";
@@ -69,13 +76,13 @@ namespace ExcelTool
                 }
 
                 // 数据从第 6 行开始（0-indexed）
-                var tableRows = new List<TableExcelRow>();
+                List<TableExcelRow> tableRows = [];
                 for (int i = 5; i <= sheet.LastRowNum; i++)
                 {
                     IRow row = sheet.GetRow(i);
                     if (row == null) continue;
 
-                    var tableExcelRow = new TableExcelRow();
+                    TableExcelRow tableExcelRow = new();
                     for (int j = 0; j < headers.Count; j++)
                         tableExcelRow.Add(GetCellValue(row.GetCell(j)));
 
@@ -95,8 +102,52 @@ namespace ExcelTool
                 return null;
             }
         }
-        
-        private static string GetCellValue(ICell cell)
+
+        static List<ParsedEnum> ParseEnumSheet(ISheet sheet)
+        {
+            List<ParsedEnum> result = [];
+            // 列索引约定：A=0 Id, B=1 EnumName, C=2 items.Name, D=3 items.Value, E=4 items.Desc
+            // 数据从第 6 行开始（0-indexed = 5）
+            ParsedEnum currentEnum = null;
+
+            for (int i = 5; i <= sheet.LastRowNum; i++)
+            {
+                IRow row = sheet.GetRow(i);
+                if (row == null) continue;
+
+                string idStr      = GetCellValue(row.GetCell(0));
+                string enumName   = GetCellValue(row.GetCell(1));
+                string memberKey  = GetCellValue(row.GetCell(2));
+                string memberVal  = GetCellValue(row.GetCell(3));
+                string memberDesc = GetCellValue(row.GetCell(4));
+
+                // 成员名为空则跳过此行
+                if (string.IsNullOrEmpty(memberKey)) continue;
+
+                // Id / EnumName 非空时，开启新枚举
+                if (!string.IsNullOrEmpty(enumName))
+                {
+                    currentEnum = new ParsedEnum
+                    {
+                        Id       = string.IsNullOrEmpty(idStr) ? 0 : Convert.ToUInt32(double.Parse(idStr)),
+                        EnumName = enumName,
+                    };
+                    result.Add(currentEnum);
+                }
+
+                // 如果没有任何枚举上下文就跳过
+                currentEnum?.Members.Add(new ParsedEnumMember
+                {
+                    Key   = memberKey,
+                    Value = string.IsNullOrEmpty(memberVal) ? null : Convert.ToInt32(double.Parse(memberVal)),
+                    Desc  = memberDesc,
+                });
+            }
+
+            return result;
+        }
+
+        static string GetCellValue(ICell cell)
         {
             if (cell == null)
                 return "";
