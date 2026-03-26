@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="NPOI" Version="2.7.6" />
     <PackageReference Include="Spire.XLS" Version="12.7.1" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
   </ItemGroup>
 </Project>

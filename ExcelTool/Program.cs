@@ -1,52 +1,61 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
+using System.CommandLine;
 using ExcelTool.Parser;
 
 namespace ExcelTool
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            string path = AppDomain.CurrentDomain.BaseDirectory;
-            string outputCodeDir = "";
-            string outputDataDir = "";
-            string nameSpace = "";
-
-            foreach (string arg in args)
-            {
-                if (arg.StartsWith("--input="))
-                {
-                    path = arg["--input=".Length..];
-                }
-                else if (arg.StartsWith("--outputCodeDir="))
-                {
-                    outputCodeDir = arg["--outputCodeDir=".Length..];
-
-                }
-                else if (arg.StartsWith("--outputDataDir="))
-                {
-                    outputDataDir = arg["--outputDataDir=".Length..];
-                }
-                else if (arg.StartsWith("--namespace="))
-                {
-                    nameSpace = arg["--namespace=".Length..];
-                }
-            }
+            Option<DirectoryInfo> inputOption = new(
+                name: "--input",
+                description: "Excel 文件所在目录",
+                getDefaultValue: () => new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory)
+                );
             
-            if (string.IsNullOrEmpty(outputCodeDir) && string.IsNullOrEmpty(outputDataDir))
-            {
-                outputDataDir = outputCodeDir = path;
-            }else if (string.IsNullOrEmpty(outputCodeDir))
-            {
-                outputCodeDir = outputDataDir;
-            }else if (string.IsNullOrEmpty(outputDataDir))
-            {
-                outputDataDir = outputCodeDir;
-            }
-            // TODO 使用System.CommandLine重构参数解析
+            Option<DirectoryInfo> outputCodeDirOption = new(
+                name: "--outputCodeDir",
+                description: "CS 模板代码输出目录"
+            );
+
+            Option<DirectoryInfo> outputDataDirOption = new(
+                name: "--outputDataDir",
+                description: "二进制数据输出目录"
+            );
+
+            Option<string> namespaceOption = new(
+                name: "--namespace",
+                description: "生成代码的命名空间",
+                getDefaultValue: () => ""
+            );
+
+            RootCommand rootCommand = new();
+            rootCommand.AddOption(inputOption);
+            rootCommand.AddOption(outputCodeDirOption);
+            rootCommand.AddOption(outputDataDirOption);
+            rootCommand.AddOption(namespaceOption);
             
+            rootCommand.SetHandler(ExcelProcess.Run, inputOption, outputCodeDirOption, outputDataDirOption, namespaceOption);
+            // TODO 单元测试
+
+            return await rootCommand.InvokeAsync(args);
+        }
+    }
+
+    static class ExcelProcess
+    {
+        public static void Run(DirectoryInfo inputDir, DirectoryInfo? outputCodeDir, DirectoryInfo? outputDataDir,
+            string nameSpace)
+        {
+            string path = inputDir.FullName;
+            string codeDir = outputCodeDir?.FullName ?? outputDataDir?.FullName ?? path;
+            string dataDir = outputDataDir?.FullName ?? outputCodeDir?.FullName ?? path;
+
             DirectoryInfo dirInfo = new(path);
             FileInfo[] excels = dirInfo.GetFiles("*.xlsx", SearchOption.AllDirectories);
             if (excels.Length <= 0)
@@ -56,8 +65,8 @@ namespace ExcelTool
             else
             {
                 "==========================================================".WriteSuccessLine();
-                "== 根据xlsx生成模板代码和二进制文件工具             ==".WriteSuccessLine();
-                "== 说明:将exe放在xlsx目录中或者exe或者传入根目录 ==".WriteSuccessLine();
+                "== 根据xlsx生成模板代码和二进制文件工具                 ==".WriteSuccessLine();
+                "== 说明:将exe放在xlsx目录中或者exe或者传入根目录        ==".WriteSuccessLine();
                 "==========================================================".WriteSuccessLine();
 
                 excels = dirInfo.GetFiles("*.xlsx", SearchOption.AllDirectories);
@@ -68,9 +77,9 @@ namespace ExcelTool
                     if (file.Name.StartsWith("~$")) continue;
 
                     List<ParsedSheet> sheets = ExcelHelper.ParseAllSheets(file.FullName);
-                    
+
                     //生成CS文件
-                    bool res = GenModels.GenCSharpModel(sheets, outputCodeDir, nameSpace);
+                    bool res = GenModels.GenCSharpModel(sheets, codeDir, nameSpace);
                     if (res)
                     {
                         $"{file.Name}CS模板生成成功".WriteSuccessLine();
@@ -81,7 +90,7 @@ namespace ExcelTool
                     }
 
                     //生成二进制文件，如果list或者vector数据为空则写入0，要根据类型来读取csv的字段数据强转成对应的数据类型然后写入
-                    res = TableExcelExportBytes.ExportToFile(sheets, outputDataDir);
+                    res = TableExcelExportBytes.ExportToFile(sheets, dataDir);
                     if (res)
                     {
                         $"{file.Name}二进制数据生成成功".WriteSuccessLine();
@@ -91,22 +100,6 @@ namespace ExcelTool
                         $"{file.Name}二进制数据生成失败".WriteErrorLine();
                     }
                 }
-                
-                // TODO 抽象 ExcelProcess 类 处理相关流程
-
-                // TODO 单元测试
-                //IBinarySerializable newavList = new avatarguideTestConfig();
-                //var readOK = FileManager.ReadBinaryDataFromFile(Path.Combine(path, "avatarguideTest.bytes"), ref newavList);
-                //if (readOK)
-                //{
-                //    ConsoleHelper.WriteInfoLine(newavList.ToString());
-                //    var d = (newavList as avatarguideTestConfig).QueryById(1).ToList();
-                //    ConsoleHelper.WriteInfoLine(d[0].gender);
-                //}
-                //else
-                //{
-                //    ConsoleHelper.WriteErrorLine("读取失败");
-                //}
             }
         }
     }
