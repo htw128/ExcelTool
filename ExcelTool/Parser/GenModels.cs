@@ -43,6 +43,12 @@ namespace ExcelTool.Parser
                         sb.Append("}\n");
 
                     FileManager.WriteToFile(Path.Combine(outputDir, $"{sheet.SheetName}.cs"), sb.ToString());
+
+                    // ── AudioObjectDefinitions 生成（仅针对 AudioObject 表） ─────────────────────
+                    if (sheet.SheetName == "AudioObject")
+                    {
+                        GenerateAudioObjectDefinitions(parsedSheets, outputDir, nameSpace);
+                    }
                 }
 
                 return true;
@@ -161,7 +167,7 @@ namespace ExcelTool.Parser
             sb.Append($"\tList<{name}> m_{camel}InfoList;\n\n");
 
             sb.Append($"\tpublic List<{name}> {name}List()\n\t{{\n");
-            sb.Append($"\t\tthis.m_{camel}InfoList ??= new List<{name}>(m_{camel}Infos.Values);\n");
+            sb.Append($"\t\tthis.m_{camel}InfoList ??= new List<{name}>(this.m_{camel}Infos.Values);\n");
             sb.Append($"\t\treturn this.m_{camel}InfoList;\n\t}}\n\n");
 
             sb.Append($"\tpublic void DeSerialize(BinaryReader reader)\n\t{{\n");
@@ -181,6 +187,94 @@ namespace ExcelTool.Parser
             sb.Append($"\tpublic {name} QueryById(uint id)\n\t{{\n");
             sb.Append($"\t\treturn this.m_{camel}Infos.GetValueOrDefault(id);\n");
             sb.Append("\t}\n}\n");
+        }
+
+        private static void GenerateAudioObjectDefinitions(List<ParsedSheet> parsedSheets, string outputDir, string nameSpace)
+        {
+            ParsedSheet audioSheet = parsedSheets.Find(s => s.SheetName == "AudioObject");
+            if (audioSheet == null) return;
+
+            // 假设字段名：Id(uint), Names(list<string>)
+            Dictionary<uint, List<string>> idToNames = new();
+            Dictionary<string, List<uint>> nameToIds = new();
+
+            int idIndex = audioSheet.Headers.FindIndex(h => h.FieldName == "Id");
+            int namesIndex = audioSheet.Headers.FindIndex(h => h.FieldName == "Name");
+            
+            foreach (TableExcelRow row in audioSheet.Data.Rows)
+            {
+                // 根据 Headers 找到列索引
+                if (idIndex < 0 || namesIndex < 0) continue;
+
+                if (string.IsNullOrEmpty(row.StrList[idIndex])) continue;
+                
+                uint id = Convert.ToUInt32(row.StrList[idIndex]);
+
+                // Names 是用分隔符（例如 ','）拼接的字符串
+                string rawNames = row.StrList[namesIndex];
+                List<string> names = new(rawNames.Split([','], StringSplitOptions.RemoveEmptyEntries));
+
+                idToNames[id] = names;
+
+                foreach (var name in names)
+                {
+                    if (!nameToIds.TryGetValue(name, out var list))
+                    {
+                        list = new List<uint>();
+                        nameToIds[name] = list;
+                    }
+                    list.Add(id);
+                }
+            }
+
+            StringBuilder sb = new();
+            sb.Append("/* auto generated, do not modify */\n");
+            sb.Append("using System.Collections.Generic;\n\n");
+
+            if (!string.IsNullOrEmpty(nameSpace))
+                sb.Append($"namespace {nameSpace}\n{{\n");
+
+            sb.Append("public static class AudioObjectDefinitions\n{\n");
+
+            // NameToId
+            sb.Append("\tpublic static readonly Dictionary<string, uint> NameToId = new()\n\t{\n");
+            foreach (var kv in nameToIds)
+            {
+                uint minId = uint.MaxValue;
+                foreach (uint id in kv.Value)
+                    if (id < minId) minId = id;
+
+                sb.Append($"\t\t{{ \"{kv.Key}\", {minId} }},\n");
+            }
+            sb.Append("\t};\n\n");
+
+            // AmbiguousNames
+            sb.Append("\tpublic static readonly HashSet<string> AmbiguousNames = new()\n\t{\n");
+            foreach (var kv in nameToIds)
+            {
+                if (kv.Value.Count > 1)
+                    sb.Append($"\t\t\"{kv.Key}\",\n");
+            }
+            sb.Append("\t};\n\n");
+
+            // SharedIdNames
+            sb.Append("\tpublic static readonly HashSet<string> SharedIdNames = new()\n\t{\n");
+            foreach (var kv in idToNames)
+            {
+                var names = kv.Value;
+                for (int i = 1; i < names.Count; i++)
+                {
+                    sb.Append($"\t\t\"{names[i]}\",\n");
+                }
+            }
+            sb.Append("\t};\n");
+
+            sb.Append("}\n");
+
+            if (!string.IsNullOrEmpty(nameSpace))
+                sb.Append("}\n");
+
+            FileManager.WriteToFile(Path.Combine(outputDir, "AudioObjectDefinitions.cs"), sb.ToString());
         }
 
         // ──────────────────────────────────────────────────────────────────────────

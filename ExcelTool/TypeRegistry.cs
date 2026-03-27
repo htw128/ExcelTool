@@ -226,9 +226,9 @@ namespace ExcelTool
                 "\t\telse\n" +
                 "\t\t{\n" +
                 $"\t\t\twriter.Write({name}.Count);\n" +
-                $"\t\t\tfor (int i = 0; i < {name}.Count; i++)\n" +
+                $"\t\t\tforeach (var t in {name})\n" +
                 "\t\t\t{\n" +
-                $"\t\t\t\twriter.Write({name}[i]);\n" +
+                $"\t\t\t\twriter.Write(t);\n" +
                 "\t\t\t}\n" +
                 "\t\t}\n";
         }

@@ -50,7 +50,7 @@ namespace ExcelTool.Parser
         /// <summary>
         /// 将所有枚举的 Id 汇总，生成 EnumIds.cs 静态常量类
         /// </summary>
-        public static bool GenEnumIds(List<ParsedEnum> enumSheets, string outputDir, string nameSpace = "")
+        public static bool GenEnumIds(List<ParsedEnum> enumSheet, string outputDir, string nameSpace = "")
         {
             try
             {
@@ -62,10 +62,18 @@ namespace ExcelTool.Parser
 
                 sb.Append("\tpublic static class EnumIds\n\t{\n");
 
-                foreach (ParsedEnum enumSheet in enumSheets)
-                    sb.Append($"\t\tpublic const uint {enumSheet.EnumName} = {enumSheet.Id};\n");
+                foreach (ParsedEnum parsedEnum in enumSheet)
+                    sb.AppendLine($"\t\tpublic const uint {parsedEnum.EnumName} = {parsedEnum.Id};\n");
+
+                sb.AppendLine("\t\tpublic static void RegisterAllGameState()\n\t\t{");
+                foreach (ParsedEnum parsedEnum in enumSheet)
+                {
+                    sb.AppendLine($"\t\t\tStateGroupRegistry.Register<{parsedEnum.EnumName}>({parsedEnum.Id});");
+                }
+                sb.AppendLine("\t\t}");
 
                 sb.Append("\t}\n");
+
 
                 if (!string.IsNullOrEmpty(nameSpace))
                     sb.Append("}\n");
