@@ -193,8 +193,7 @@ namespace ExcelTool.Parser
         {
             ParsedSheet audioSheet = parsedSheets.Find(s => s.SheetName == "AudioObject");
             if (audioSheet == null) return;
-
-            // 假设字段名：Id(uint), Names(list<string>)
+            
             Dictionary<uint, List<string>> idToNames = new();
             Dictionary<string, List<uint>> nameToIds = new();
 
@@ -214,13 +213,13 @@ namespace ExcelTool.Parser
                 string rawNames = row.StrList[namesIndex];
                 List<string> names = new(rawNames.Split([','], StringSplitOptions.RemoveEmptyEntries));
 
-                idToNames[id] = names;
+                idToNames[id] = names; // 同一个ID对应了多少个不同的名字（Container）
 
-                foreach (var name in names)
+                foreach (string name in names)
                 {
-                    if (!nameToIds.TryGetValue(name, out var list))
+                    if (!nameToIds.TryGetValue(name, out List<uint> list))
                     {
-                        list = new List<uint>();
+                        list = [];
                         nameToIds[name] = list;
                     }
                     list.Add(id);
@@ -258,14 +257,21 @@ namespace ExcelTool.Parser
             sb.Append("\t};\n\n");
 
             // SharedIdNames
-            sb.Append("\tpublic static readonly HashSet<string> SharedIdNames = new()\n\t{\n");
-            foreach (var kv in idToNames)
+            HashSet<string> sharedNames = [];
+            foreach (KeyValuePair<uint, List<string>> keyValuePair in idToNames)
             {
-                var names = kv.Value;
-                for (int i = 1; i < names.Count; i++)
+                if (keyValuePair.Value.Count > 1)
                 {
-                    sb.Append($"\t\t\"{names[i]}\",\n");
+                    foreach (string name in keyValuePair.Value)
+                        sharedNames.Add(name);
                 }
+            }
+            
+            sb.Append("\tpublic static readonly HashSet<string> SharedIdNames = new()\n\t{\n");
+            
+            foreach (string name in sharedNames)
+            {
+                sb.Append($"\t\t\"{name}\",\n");
             }
             sb.Append("\t};\n");
 
