@@ -147,7 +147,7 @@ namespace ExcelTool
             return result;
         }
 
-        static string GetCellValue(ICell cell)
+        internal static string GetCellValue(ICell cell)
         {
             if (cell == null)
                 return "";
