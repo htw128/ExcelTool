@@ -283,13 +283,14 @@ pause
 #### TODO
 
 * [x] 支持枚举类型
-* [ ] 支持不同表不同namespace
+* [x] 支持不同表不同namespace
 * [ ] 支持Excel数据配置规范性检测，例如手误配置不符合规范导致加载异常，例如大小写逗号(肉眼容易忽略)，或者空格等等
 	* [ ] ID不能重复
-	* [ ] MusicContainer不能自引用
+	* [ ] Music、Audio Container不能自引用
 	* [ ] 同时播放的音乐BPM必须一致
+	* [ ] Blend容器不能配置Haptic ID
 * [ ] 生成CueSheet避免magic number
-* [ ] 支持更多自定义数据类型扩展
+* [ ] AudioObject支持Container嵌套
 
 #### Unity客户端使用范例
 

@@ -182,7 +182,7 @@ namespace ExcelTool
                 WriteBinary = (bw, v) =>
                 {
                     if (string.IsNullOrEmpty(v)) { bw.Write(0); return; }
-                    var parts = v.Split(',');
+                    var parts = v.Split('|');
                     bw.Write(parts.Length);
                     foreach (var p in parts) writeElem(bw, p);
                 },

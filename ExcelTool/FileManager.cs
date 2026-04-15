@@ -91,7 +91,7 @@ namespace ExcelTool
                 return;
             }
 
-            var parts = value.Split(',');
+            var parts = value.Split('|');
             bw.Write(parts.Length);
             foreach (var p in parts)
                 elemDesc.WriteBinary(bw, p);

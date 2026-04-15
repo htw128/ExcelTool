@@ -209,9 +209,9 @@ namespace ExcelTool.Parser
                 
                 uint id = Convert.ToUInt32(row.StrList[idIndex]);
 
-                // Names 是用分隔符（例如 ','）拼接的字符串
+                // Names 是用分隔符（例如 '|'）拼接的字符串
                 string rawNames = row.StrList[namesIndex];
-                List<string> names = new(rawNames.Split([','], StringSplitOptions.RemoveEmptyEntries));
+                List<string> names = new(rawNames.Split(['|'], StringSplitOptions.RemoveEmptyEntries));
 
                 idToNames[id] = names; // 同一个ID对应了多少个不同的名字（Container）
 
