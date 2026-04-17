@@ -2,6 +2,7 @@
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using ExcelTool.Parser;
 
@@ -158,13 +159,13 @@ namespace ExcelTool
                     return cell.StringCellValue;
 
                 case CellType.Numeric:
-                    return DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue.ToString() : cell.NumericCellValue.ToString();
+                    return DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue.ToString() : cell.NumericCellValue.ToString(CultureInfo.InvariantCulture);
 
                 case CellType.Boolean:
                     return cell.BooleanCellValue ? "1" : "0";
 
                 case CellType.Formula:
-                    return cell.ToString();
+                    return cell.StringCellValue;
 
                 default:
                     return "";

@@ -44,11 +44,6 @@ namespace ExcelTool.Parser
 
                     FileManager.WriteToFile(Path.Combine(outputDir, $"{sheet.SheetName}.cs"), sb.ToString());
 
-                    // ── AudioObjectDefinitions 生成（仅针对 AudioObject 表） ─────────────────────
-                    if (sheet.SheetName == "AudioObject")
-                    {
-                        GenerateAudioObjectDefinitions(parsedSheets, outputDir, nameSpace);
-                    }
                 }
 
                 return true;

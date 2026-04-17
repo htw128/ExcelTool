@@ -285,11 +285,13 @@ pause
 * [x] 支持枚举类型
 * [x] 支持不同表不同namespace
 * [ ] 支持Excel数据配置规范性检测，例如手误配置不符合规范导致加载异常，例如大小写逗号(肉眼容易忽略)，或者空格等等
-	* [ ] ID不能重复
-	* [ ] Music、Audio Container不能自引用
-	* [ ] 同时播放的音乐BPM必须一致
-	* [ ] Blend容器不能配置Haptic ID
-* [ ] 生成CueSheet避免magic number
+	* [ ] ID不能重复 给出错误
+	* [ ] Music、Audio Container不能自引用 给出错误
+	* [ ] 同时播放的音乐BPM必须一致 给出错误
+	* [ ] CueName不能包含空格` `，和`-`，不能以数字开头。给出警告
+	* [ ] Blend容器不能配置Haptic ID 给出警告
+	* [ ] SyncPoint功能性需要两个文件BPM、采样率皆一致。给出警告
+* [x] 生成CueSheet避免magic number
 * [ ] AudioObject支持Container嵌套
 
 #### Unity客户端使用范例

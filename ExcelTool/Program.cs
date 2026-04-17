@@ -22,7 +22,6 @@ namespace ExcelTool
             rootCommand.AddOption(tablesOption);
             
             rootCommand.SetHandler(ExcelProcess.Run, tablesOption);
-            // TODO 单元测试
 
             return await rootCommand.InvokeAsync(args);
         }
@@ -52,8 +51,6 @@ namespace ExcelTool
                 "== 根据xlsx生成模板代码和二进制文件工具                 ==".WriteSuccessLine();
                 "== 说明:将exe放在xlsx目录中或者exe或者传入根目录        ==".WriteSuccessLine();
                 "==========================================================".WriteSuccessLine();
-
-                // excels = dirInfo.GetFiles("*.xlsx", SearchOption.AllDirectories);
 
                 //读取
                 foreach (TableEntry tableEntry in tableEntries)
@@ -89,21 +86,12 @@ namespace ExcelTool
                         $"{fileName}CS模板生成失败".WriteErrorLine();
                     }
                     
-                    // 生成CS枚举文件
-                    if (enumSheets.Count > 0)
-                    {
-                        bool enumRes = GenEnums.GenCSharpEnum(enumSheets, tableEntry.OutputCodeDir, tableEntry.Namespace);
-                        if (enumRes)
-                            $"{fileName} 枚举代码生成成功".WriteSuccessLine();
-                        else
-                            $"{fileName} 枚举代码生成失败".WriteErrorLine();
-
-                        bool enumIdsRes = GenEnums.GenEnumIds(enumSheets, tableEntry.OutputCodeDir, tableEntry.Namespace);
-                        if (enumIdsRes)
-                            $"{fileName} EnumIds 生成成功".WriteSuccessLine();
-                        else
-                            $"{fileName} EnumIds 生成失败".WriteErrorLine();
-                    }
+                    // 生成 AudioConsts.cs（合并枚举、枚举ID、AudioObject定义和CUE映射）
+                    bool audioConstsRes = GenAudioConsts.Gen(sheets, enumSheets, tableEntry.OutputCodeDir, tableEntry.Namespace);
+                    if (audioConstsRes)
+                        $"{fileName} AudioConsts 生成成功".WriteSuccessLine();
+                    else
+                        $"{fileName} AudioConsts 生成失败".WriteErrorLine();
 
                     //生成二进制文件，如果list或者vector数据为空则写入0，要根据类型来读取csv的字段数据强转成对应的数据类型然后写入
                     res = TableExcelExportBytes.ExportToFile(sheets, tableEntry.OutputDataDir);
@@ -117,11 +105,6 @@ namespace ExcelTool
                     }
                 }
             }
-        }
-
-        public static void Test()
-        {
-            
         }
     }
 }
