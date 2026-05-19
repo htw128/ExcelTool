@@ -1,11 +1,16 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 namespace ExcelTool.Parser
 {
     public class ParsedEnumMember
     {
-        /// <summary>成员名，如 "Home"</summary>
-        public string Key { get; set; }
+        public string Key
+        {
+            get;
+            set { field = ParsedEnum.NormalizeIdentifier(value); }
+        }
 
         /// <summary>显式值，为 null 时代码生成时自动递增（不写值）</summary>
         public int? Value { get; set; }
@@ -19,9 +24,43 @@ namespace ExcelTool.Parser
         /// <summary>A 列 Id，供外部系统通过 EnumIds 常量类引用</summary>
         public uint Id { get; set; }
 
-        /// <summary>枚举类型名，如 "GameState"</summary>
-        public string EnumName { get; set; }
+        public string EnumName
+        {
+            get;
+            set
+            {
+                field = NormalizeIdentifier(value);
+            }
+        }
 
-        public List<ParsedEnumMember> Members { get; set; } = new();
+        public static string NormalizeIdentifier(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return string.Empty;
+            }
+
+            string[] parts = Regex.Split(input, @"[\s_-]+")
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToArray();
+
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string part = parts[i];
+
+                if (part.Length == 1)
+                {
+                    parts[i] = char.ToUpperInvariant(part[0]).ToString();
+                }
+                else
+                {
+                    parts[i] = char.ToUpperInvariant(part[0]) + part.Substring(1);
+                }
+            }
+
+            return string.Concat(parts);
+        }
+
+        public List<ParsedEnumMember> Members { get; set; } = [];
     }
 }
