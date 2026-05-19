@@ -83,6 +83,10 @@ namespace ExcelTool
                     IRow row = sheet.GetRow(i);
                     if (row == null) continue;
 
+                    
+                    // ID为空则跳过该行
+                    if (string.IsNullOrEmpty(GetCellValue(row.GetCell(0)))) continue;
+
                     TableExcelRow tableExcelRow = new();
                     for (int j = 0; j < headers.Count; j++)
                         tableExcelRow.Add(GetCellValue(row.GetCell(j)));

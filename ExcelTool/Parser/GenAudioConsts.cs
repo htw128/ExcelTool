@@ -119,7 +119,9 @@ namespace ExcelTool.Parser
                 if (idIndex < 0 || namesIndex < 0) continue;
                 if (string.IsNullOrEmpty(row.StrList[idIndex])) continue;
 
-                uint id         = Convert.ToUInt32(row.StrList[idIndex]);
+                uint id = Convert.ToUInt32(row.StrList[idIndex]);
+                if (id == 0) continue;  // 跳过ID=0的行
+                
                 string rawNames = row.StrList[namesIndex];
                 List<string> names = new(rawNames.Split(['|'], StringSplitOptions.RemoveEmptyEntries));
 
@@ -223,7 +225,9 @@ namespace ExcelTool.Parser
                 if (idIndex < 0 || namesIndex < 0) continue;
                 if (string.IsNullOrEmpty(row.StrList[idIndex])) continue;
 
-                uint id         = Convert.ToUInt32(row.StrList[idIndex]);
+                uint id = Convert.ToUInt32(row.StrList[idIndex]);
+                if (id == 0) continue;  // 跳过ID=0的行
+
                 string rawNames = row.StrList[namesIndex];
                 List<string> names = new(rawNames.Split(['|'], StringSplitOptions.RemoveEmptyEntries));
 

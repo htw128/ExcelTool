@@ -201,8 +201,9 @@ namespace ExcelTool.Parser
                 if (idIndex < 0 || namesIndex < 0) continue;
 
                 if (string.IsNullOrEmpty(row.StrList[idIndex])) continue;
-                
+
                 uint id = Convert.ToUInt32(row.StrList[idIndex]);
+                if (id == 0) continue;  // 跳过ID=0的行
 
                 // Names 是用分隔符（例如 '|'）拼接的字符串
                 string rawNames = row.StrList[namesIndex];
